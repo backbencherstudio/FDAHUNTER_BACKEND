@@ -577,7 +577,13 @@ export class AuthService {
   async resendVerificationEmail(email: string) {
     try {
       const user = await this.userRepository.getUserByEmail(email);
-
+      // check if user exist and already verified
+      if (user && user.email_verified_at != null) {
+        return {
+          success: false,
+          message: 'Email already verified at ' + user.email_verified_at,
+        };
+      }
       if (user) {
         // create otp code
         const token = await this.ucodeRepository.createToken({
@@ -595,6 +601,7 @@ export class AuthService {
         return {
           success: true,
           message: 'We have sent a verification code to your email',
+          otp : token,
         };
       } else {
         return {
@@ -817,4 +824,10 @@ export class AuthService {
     }
   }
   // --------- end 2FA ---------
+
+  async googleLogin(){
+    
+  }
+
+
 }

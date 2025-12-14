@@ -53,7 +53,6 @@ export class AuthController {
   @Post('register')
   async create(@Body() data: CreateUserDto) {
     try {
-
       const first_name = data.first_name;
       const last_name = data.last_name;
       const email = data.email;
@@ -173,19 +172,19 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleLogin(): Promise<any> {
-    return HttpStatus.OK;
+  async googleLogin(): Promise<void> {
+    // Passport handles redirect automatically
   }
 
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
-  async googleLoginRedirect(@Req() req: Request): Promise<any> {
+  async googleLoginRedirect(@Req() req): Promise<any> {
     return {
       statusCode: HttpStatus.OK,
-      data: req.user,
+      message: 'Google authentication successful',
+      user: req.user,
     };
   }
-
   // update user
   @ApiOperation({ summary: 'Update user' })
   @ApiBearerAuth()
