@@ -64,6 +64,8 @@ model User {
   gender        String?
   date_of_birth DateTime? @db.Date
 
+  user_preferences String[]
+
   // billing id. e.g. stripe customer id
   billing_id String?
 
@@ -439,3 +441,16 @@ model UserSetting {
 //   tenant    Organization? @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 //   @@map("posts")
 // }
+
+model Category {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  userid String?
+
+  name        String?
+  parent_name String?
+  parent_id   String?
+}
