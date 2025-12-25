@@ -1,5 +1,10 @@
 // external imports
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
@@ -335,7 +340,7 @@ export class AuthService {
     password,
     type,
   }: {
-    name: string,
+    name: string;
     first_name: string;
     last_name: string;
     email: string;
@@ -357,7 +362,7 @@ export class AuthService {
       }
 
       const user = await this.userRepository.createUser({
-        name : name,
+        name: name,
         first_name: first_name,
         last_name: last_name,
         email: email,
@@ -406,7 +411,7 @@ export class AuthService {
 
       return {
         success: true,
-        otp:token,
+        otp: token,
         message: 'We have sent an OTP code to your email',
       };
 
@@ -460,7 +465,7 @@ export class AuthService {
         return {
           success: true,
           message: 'We have sent an OTP code to your email',
-          otp : token,
+          otp: token,
         };
       } else {
         return {
@@ -605,7 +610,7 @@ export class AuthService {
         return {
           success: true,
           message: 'We have sent a verification code to your email',
-          otp : token,
+          otp: token,
         };
       } else {
         return {
@@ -829,9 +834,46 @@ export class AuthService {
   }
   // --------- end 2FA ---------
 
-  async googleLogin(){
-    
+  async googleLogin() {}
+
+  async userPreferences(userId: string, categoryIds: string[]) {
+    if (!categoryIds || categoryIds.length === 0) {
+      throw new BadRequestException('Category IDs are required');
+    }
+
+    const duplicates = categoryIds.filter(
+      (id, index) => categoryIds.indexOf(id) !== index,
+    );
+    if (duplicates.length > 0) {
+      throw new BadRequestException(
+        `Cannot add duplicate category IDs: ${[...new Set(duplicates)].join(', ')}`,
+      );
+    }
+
+    const categories = await this.prisma.category.findMany({
+      where: {
+        id: { in: categoryIds },
+        parent_id: null,
+      },
+      select: { id: true },
+    });
+
+    const validIds = categories.map((c) => c.id);
+    const invalidIds = categoryIds.filter((id) => !validIds.includes(id));
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid or category IDs: ${invalidIds.join(', ')}`,
+      );
+    }
+
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { user_preferences: categoryIds },
+        select: { user_preferences: true },
+      });
+    } catch (err) {
+      throw new NotFoundException('User not found');
+    }
   }
-
-
 }
