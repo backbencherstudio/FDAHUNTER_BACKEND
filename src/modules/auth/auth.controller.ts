@@ -18,7 +18,7 @@ import { memoryStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreatePreferences, CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -102,6 +102,25 @@ export class AuthController {
         message: error.message,
       };
     }
+  }
+
+  
+  @UseGuards(JwtAuthGuard)
+  @Post('preferences')
+  async updatePreferences(
+    @Body() dto: CreatePreferences,
+    @Req() req: Request,
+  ) {
+    const updatedPreferences = await this.authService.userPreferences(
+      req.user.userId,
+      dto.user_preferences,
+    );
+
+    return {
+      success: true,
+      message: 'User preferences updated successfully',
+      data: updatedPreferences,
+    };
   }
 
   // login user

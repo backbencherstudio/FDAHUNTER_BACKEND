@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -28,4 +29,16 @@ export class CreateUserDto {
     example: 'user',
   })
   type?: string;
+}
+
+
+export class CreatePreferences {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(4)
+  @IsString({ each: true })
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value : [value],
+  )
+  user_preferences: string[];
 }

@@ -5,6 +5,8 @@ import { WebsiteInfoModule } from './website-info/website-info.module';
 import { PaymentTransactionModule } from './payment-transaction/payment-transaction.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
+import { CategoryModule } from './category/category.module';
+import { PredictionsModule } from './predictions/predictions.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { NotificationModule } from './notification/notification.module';
     PaymentTransactionModule,
     UserModule,
     NotificationModule,
+    CategoryModule,
+    PredictionsModule,
   ],
 })
 export class AdminModule {}

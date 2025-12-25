@@ -453,4 +453,34 @@ model Category {
   name        String?
   parent_name String?
   parent_id   String?
+  win_rate    Float? @default(0)
+  description String? @default("")
+  predictions Prediction[] @relation("PredictionCategory")
+
+  @@map("categories")
+}
+
+enum PredictionStatus {
+  WIN
+  CANCEL
+  LOSS
+}
+
+model Prediction {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  userid String?
+
+  category_id String?
+  category    Category? @relation("PredictionCategory", fields: [category_id], references: [id])
+
+  notes       String?
+  win_percent Float?
+
+  status PredictionStatus? @default(CANCEL)
+
+  @@map("predictions")
 }
