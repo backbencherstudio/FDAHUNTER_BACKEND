@@ -18,7 +18,7 @@ import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 @Controller('admin/predictions')
 export class PredictionsController {
   constructor(private readonly predictionsService: PredictionsService) {}
-  
+
   @UseGuards(JwtAuthGuard)
   @Post('create')
   create(@Req() req: any, @Body() createPredictionDto: CreatePredictionDto) {
@@ -26,26 +26,36 @@ export class PredictionsController {
     return this.predictionsService.create(user_id, createPredictionDto);
   }
 
-  @Get("getAll/:category_id")
+  @UseGuards(JwtAuthGuard)
+  @Get('allPredictions')
+  getAllPredictions(@Req() req: any) {
+    const user_id = req.user.userId;
+    return this.predictionsService.getAllPredictions(user_id);
+  }
+
+  @Get('getAll/:category_id')
   findAll(@Param('category_id') category_id: string) {
     return this.predictionsService.getAllWithcategoryId(category_id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.predictionsService.findOne(+id);
-  }
-
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
     @Body() updatePredictionDto: UpdatePredictionDto,
+    @Req() req: any,
   ) {
-    return this.predictionsService.update(+id, updatePredictionDto);
+    return this.predictionsService.update(
+      id,
+      updatePredictionDto,
+      req.user.userId,
+    );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.predictionsService.remove(+id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    const user_id = req.user.userId;
+    return this.predictionsService.remove(id, user_id);
   }
 }

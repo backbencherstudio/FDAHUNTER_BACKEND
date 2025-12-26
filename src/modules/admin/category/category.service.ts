@@ -38,6 +38,7 @@ export class CategoryService {
         data: {
           name: createCategoryDto.name,
           parent_id: createCategoryDto.parent_id || null,
+          description: createCategoryDto.description,
         },
       });
 
@@ -90,10 +91,7 @@ export class CategoryService {
   async getAllParentCategories(userId: string) {
     try {
       const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
-          type: 'admin',
-        },
+        where: { id: userId },
       });
 
       if (!user) {
@@ -101,19 +99,73 @@ export class CategoryService {
       }
 
       const parentCategories = await this.prisma.category.findMany({
+        where: {
+          parent_id: null,
+        },
         select: {
           id: true,
           name: true,
           description: true,
         },
-        where: {
-          parent_id: null,
+        orderBy: {
+          name: 'asc',
         },
       });
+
+      const categoryIds = parentCategories.map((cat) => cat.id);
+
+      const totalStats = await this.prisma.prediction.groupBy({
+        by: ['category_id'],
+        _count: { _all: true },
+        where: {
+          category_id: { in: categoryIds },
+        },
+      });
+
+      const winStats = await this.prisma.prediction.groupBy({
+        by: ['category_id'],
+        _count: { _all: true },
+        where: {
+          status: 'WIN',
+          category_id: { in: categoryIds },
+        },
+      });
+
+      const openStats = await this.prisma.prediction.groupBy({
+        by: ['category_id'],
+        _count: { _all: true },
+        where: {
+          status: 'OPEN',
+          category_id: { in: categoryIds },
+        },
+      });
+
+      const data = parentCategories.map((category) => {
+        const total =
+          totalStats.find((t) => t.category_id === category.id)?._count._all ||
+          0;
+
+        const wins =
+          winStats.find((w) => w.category_id === category.id)?._count._all || 0;
+
+        const open_count =
+          openStats.find((o) => o.category_id === category.id)?._count._all ||
+          0;
+
+        const win_rate =
+          total === 0 ? 0 : Number(((wins / total) * 100).toFixed(2));
+
+        return {
+          ...category,
+          win_rate,
+          open_count,
+        };
+      });
+
       return {
         success: true,
         message: 'Parent categories fetched successfully',
-        data: parentCategories,
+        data,
       };
     } catch (error) {
       throw error;

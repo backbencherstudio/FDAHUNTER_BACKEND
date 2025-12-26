@@ -22,11 +22,11 @@ export class CategoryController {
   @Post()
   create(@Body() createCategoryDto: CreateCategoryDto, @Req() req: any) {
     const userId = req.user.userId;
-    //return this.categoryService.create(createCategoryDto, userId);
-    return {
-      success: false,
-      message: 'This service is currently disabled',
-    };
+    return this.categoryService.create(createCategoryDto, userId);
+    // return {
+    //   success: false,
+    //   message: 'This service is currently disabled',
+    // };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -42,6 +42,7 @@ export class CategoryController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('parents')
   findAll(@Req() req: any) {
     const userId = req.user.userId;
