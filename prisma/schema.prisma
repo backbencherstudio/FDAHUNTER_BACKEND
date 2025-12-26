@@ -461,6 +461,7 @@ model Category {
 }
 
 enum PredictionStatus {
+  OPEN
   WIN
   CANCEL
   LOSS
@@ -480,7 +481,7 @@ model Prediction {
   notes       String?
   win_percent Float?
 
-  status PredictionStatus? @default(CANCEL)
+  status PredictionStatus? @default(OPEN)
 
   @@map("predictions")
 }

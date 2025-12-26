@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "MessageStatus" AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'READ');
 
+-- CreateEnum
+CREATE TYPE "PredictionStatus" AS ENUM ('OPEN', 'WIN', 'CANCEL', 'LOSS');
+
 -- CreateTable
 CREATE TABLE "accounts" (
     "id" TEXT NOT NULL,
@@ -46,6 +49,7 @@ CREATE TABLE "users" (
     "zip_code" TEXT,
     "gender" TEXT,
     "date_of_birth" DATE,
+    "user_preferences" TEXT[],
     "billing_id" TEXT,
     "type" TEXT DEFAULT 'user',
     "email_verified_at" TIMESTAMP(3),
@@ -318,6 +322,37 @@ CREATE TABLE "user_settings" (
 );
 
 -- CreateTable
+CREATE TABLE "categories" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "userid" TEXT,
+    "name" TEXT,
+    "parent_name" TEXT,
+    "parent_id" TEXT,
+    "win_rate" DOUBLE PRECISION DEFAULT 0,
+    "description" TEXT DEFAULT '',
+
+    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "predictions" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "userid" TEXT,
+    "category_id" TEXT,
+    "notes" TEXT,
+    "win_percent" DOUBLE PRECISION,
+    "status" "PredictionStatus" DEFAULT 'OPEN',
+
+    CONSTRAINT "predictions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_PermissionToRole" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -402,6 +437,9 @@ ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_setting_id_fkey" FOREIGN KEY ("setting_id") REFERENCES "settings"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "predictions" ADD CONSTRAINT "predictions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_PermissionToRole" ADD CONSTRAINT "_PermissionToRole_A_fkey" FOREIGN KEY ("A") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
