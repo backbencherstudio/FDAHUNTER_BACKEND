@@ -133,7 +133,7 @@ describe('AuthController', () => {
   });
 
   it('should verify email', async () => {
-    const result = await controller.verifyEmail({ email: 'john@example.com', token: '1234' });
+    const result = await controller.verifyEmail({ email: 'john@example.com', otp: '1234' });
     expect(result.success).toBe(true);
   });
 
@@ -145,7 +145,6 @@ describe('AuthController', () => {
   it('should reset password', async () => {
     const result = await controller.resetPassword({
       email: 'john@example.com',
-      token: '1234',
       password: 'newpass',
     });
     expect(result.success).toBe(true);
@@ -175,26 +174,4 @@ describe('AuthController', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should generate 2FA secret', async () => {
-    const result = await controller.generate2FASecret({ user: { userId: 1 } } as any);
-    expect(result.data.qrCode).toBe('base64');
-  });
-
-  it('should verify 2FA token', async () => {
-    const result = await controller.verify2FA(
-      { user: { userId: 1 } } as any,
-      { token: '123456' },
-    );
-    expect(result.success).toBe(true);
-  });
-
-  it('should enable 2FA', async () => {
-    const result = await controller.enable2FA({ user: { userId: 1 } } as any);
-    expect(result.success).toBe(true);
-  });
-
-  it('should disable 2FA', async () => {
-    const result = await controller.disable2FA({ user: { userId: 1 } } as any);
-    expect(result.success).toBe(true);
-  });
 });

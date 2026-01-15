@@ -65,4 +65,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     example: '14/11/2001',
   })
   date_of_birth?: string;
+
+  @IsOptional()
+  @ApiProperty({
+    description: 'User category',
+    example: 'Casino',
+    enum: ['Casino', 'Sports', 'Stocks', 'Crypto'],
+  })
+  category?: string;
 }

@@ -20,6 +20,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreatePreferences, CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ForgotPasswordDto, VerifyForgotPasswordOtpDto, ResetPasswordDto } from './dto/forgot-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import appConfig from '../../config/app.config';
@@ -30,25 +31,7 @@ import { AuthGuard } from '@nestjs/passport';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Get user details' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  async me(@Req() req: Request) {
-    try {
-      const user_id = req.user.userId;
-
-      const response = await this.authService.me(user_id);
-
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to fetch user details',
-      };
-    }
-  }
-
+  // Regidtation User Step 1
   @ApiOperation({ summary: 'Register a user' })
   @Post('register')
   async create(@Body() data: CreateUserDto) {
@@ -104,13 +87,159 @@ export class AuthController {
     }
   }
 
+  // signup Step 1.5 - Resend OTP
+  @ApiOperation({ summary: 'Resend registration OTP' })
+  @Post('resend-registration-otp')
+  async resendRegistrationOtp(@Body() data: { email: string }) {
+    try {
+      const email = data.email;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      return await this.authService.resendRegistrationOtp(email);
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to resend OTP',
+      };
+    }
+  }
+
+  // signup Step 2 - Verify Email
+  @ApiOperation({ summary: 'Verify email' })
+  @Post('verify-email')
+  async verifyEmail(@Body() data: VerifyEmailDto) {
+    try {
+      const email = data.email;
+      const otp = data.otp;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      if (!otp) {
+        throw new HttpException('OTP not provided', HttpStatus.UNAUTHORIZED);
+      }
+      return await this.authService.verifyEmail({
+        email: email,
+        otp: otp,
+      });
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to verify email',
+      };
+    }
+  }
+  //------------------------Forgot Password -----------------------
+
+  //----------------------- Forgot Password -----------------------
+  // Step 1: Send OTP to email
+  @ApiOperation({ summary: 'Forgot password - Step 1: Request OTP' })
+  @Post('forgot-password')
+  async forgotPassword(@Body() data: ForgotPasswordDto) {
+    try {
+      const email = data.email;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      return await this.authService.forgotPassword(email);
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Something went wrong',
+      };
+    }
+  }
+
+  // Step 2: Verify OTP and get permission
+  @ApiOperation({ summary: 'Forgot password - Step 2: Verify OTP' })
+  @Post('verify-forgot-password-otp')
+  async verifyForgotPasswordOtp(@Body() data: VerifyForgotPasswordOtpDto) {
+    try {
+      const email = data.email;
+      const otp = data.otp;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      if (!otp) {
+        throw new HttpException('OTP not provided', HttpStatus.UNAUTHORIZED);
+      }
+      return await this.authService.verifyForgotPasswordOtp({ email, otp });
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to verify OTP',
+      };
+    }
+  }
+
+  // Step 3: Reset password with permission
+  @ApiOperation({ summary: 'Forgot password - Step 3: Reset password' })
+  @Post('reset-password')
+  async resetPassword(@Body() data: ResetPasswordDto) {
+    try {
+      const email = data.email;
+      const password = data.password;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      if (!password) {
+        throw new HttpException(
+          'Password not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      return await this.authService.resetPassword({ email, password });
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Something went wrong',
+      };
+    }
+  }
+
+  // Step 4: Resend forgot password OTP
+  @ApiOperation({ summary: 'Forgot password - Step 4: Resend OTP' })
+  @Post('resend-forgot-password-otp')
+  async resendForgotPasswordOtp(@Body() data: ForgotPasswordDto) {
+    try {
+      const email = data.email;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      return await this.authService.resendForgotPasswordOtp(email);
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to resend OTP',
+      };
+    }
+  }
   
+  //----------------------- Me -----------------------
+  @ApiOperation({ summary: 'Get user details' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async me(@Req() req: Request) {
+    try {
+      const user_id = req.user.userId;
+
+      const response = await this.authService.me(user_id);
+
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to fetch user details',
+      };
+    }
+  }
+
+
+
   @UseGuards(JwtAuthGuard)
   @Post('preferences')
-  async updatePreferences(
-    @Body() dto: CreatePreferences,
-    @Req() req: Request,
-  ) {
+  async updatePreferences(@Body() dto: CreatePreferences, @Req() req: Request) {
     const updatedPreferences = await this.authService.userPreferences(
       req.user.userId,
       dto.user_preferences,
@@ -127,10 +256,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Req() req: Request, @Res() res: Response) {
+  async login(@Req() req: Request) {
     try {
       const user_id = req.user.id;
-
       const user_email = req.user.email;
 
       const response = await this.authService.login({
@@ -138,14 +266,7 @@ export class AuthController {
         email: user_email,
       });
 
-      // store to secure cookies
-      res.cookie('refresh_token', response.authorization.refresh_token, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      });
-
-      res.json(response);
+      return response;
     } catch (error) {
       return {
         success: false,
@@ -238,59 +359,22 @@ export class AuthController {
   ) {
     try {
       const user_id = req.user.userId;
+      // Debug: log raw body and parsed data
+      console.log('Raw request body:', req.body);
+      console.log('Parsed DTO data:', JSON.stringify(data, null, 2));
       const response = await this.authService.updateUser(user_id, data, image);
       return response;
     } catch (error) {
+      console.error('Update user error:', error);
       return {
         success: false,
-        message: 'Failed to update user',
+        message: error.message || 'Failed to update user',
       };
     }
   }
 
   // --------------change password---------
 
-  @ApiOperation({ summary: 'Forgot password' })
-  @Post('forgot-password')
-  async forgotPassword(@Body() data: { email: string }) {
-    try {
-      const email = data.email;
-      if (!email) {
-        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
-      }
-      return await this.authService.forgotPassword(email);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Something went wrong',
-      };
-    }
-  }
-
-  // verify email to verify the email
-  @ApiOperation({ summary: 'Verify email' })
-  @Post('verify-email')
-  async verifyEmail(@Body() data: VerifyEmailDto) {
-    try {
-      const email = data.email;
-      const token = data.token;
-      if (!email) {
-        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
-      }
-      if (!token) {
-        throw new HttpException('Token not provided', HttpStatus.UNAUTHORIZED);
-      }
-      return await this.authService.verifyEmail({
-        email: email,
-        token: token,
-      });
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to verify email',
-      };
-    }
-  }
 
   // resend verification email to verify the email
   @ApiOperation({ summary: 'Resend verification email' })
@@ -310,40 +394,6 @@ export class AuthController {
     }
   }
 
-  // reset password if user forget the password
-  @ApiOperation({ summary: 'Reset password' })
-  @Post('reset-password')
-  async resetPassword(
-    @Body() data: { email: string; token: string; password: string },
-  ) {
-    try {
-      const email = data.email;
-      const token = data.token;
-      const password = data.password;
-      if (!email) {
-        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
-      }
-      if (!token) {
-        throw new HttpException('Token not provided', HttpStatus.UNAUTHORIZED);
-      }
-      if (!password) {
-        throw new HttpException(
-          'Password not provided',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-      return await this.authService.resetPassword({
-        email: email,
-        token: token,
-        password: password,
-      });
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Something went wrong',
-      };
-    }
-  }
 
   // change password if user want to change the password
   @ApiOperation({ summary: 'Change password' })
@@ -388,8 +438,6 @@ export class AuthController {
       };
     }
   }
-
-  // --------------end change password---------
 
   // -------change email address------
   @ApiOperation({ summary: 'request email change' })
@@ -446,72 +494,4 @@ export class AuthController {
       };
     }
   }
-  // -------end change email address------
-
-  // --------- 2FA ---------
-  @ApiOperation({ summary: 'Generate 2FA secret' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Post('generate-2fa-secret')
-  async generate2FASecret(@Req() req: Request) {
-    try {
-      const user_id = req.user.userId;
-      return await this.authService.generate2FASecret(user_id);
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  @ApiOperation({ summary: 'Verify 2FA' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Post('verify-2fa')
-  async verify2FA(@Req() req: Request, @Body() data: { token: string }) {
-    try {
-      const user_id = req.user.userId;
-      const token = data.token;
-      return await this.authService.verify2FA(user_id, token);
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  @ApiOperation({ summary: 'Enable 2FA' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Post('enable-2fa')
-  async enable2FA(@Req() req: Request) {
-    try {
-      const user_id = req.user.userId;
-      return await this.authService.enable2FA(user_id);
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  @ApiOperation({ summary: 'Disable 2FA' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Post('disable-2fa')
-  async disable2FA(@Req() req: Request) {
-    try {
-      const user_id = req.user.userId;
-      return await this.authService.disable2FA(user_id);
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-  // --------- end 2FA ---------
 }

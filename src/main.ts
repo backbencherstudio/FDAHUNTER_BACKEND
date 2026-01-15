@@ -5,7 +5,6 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { join } from 'path';
-// import express from 'express';
 // internal imports
 import { AppModule } from './app.module';
 import appConfig from './config/app.config';
@@ -20,7 +19,15 @@ async function bootstrap() {
   // Handle raw body for webhooks
   // app.use('/payment/stripe/webhook', express.raw({ type: 'application/json' }));
 
-  app.setGlobalPrefix('api');
+  // Set global prefix and exclude /public routes
+  app.setGlobalPrefix('api', {
+    exclude: ['/public/(.*)'],
+  });
+
+  // Serve static files (excluded from global prefix)
+  app.useStaticAssets(join(process.cwd(), 'public'), {
+    prefix: '/public',
+  });
   app.enableCors();
   app.use(helmet());
   // Enable it, if special charactrers not encoding perfectly
@@ -31,14 +38,6 @@ async function bootstrap() {
   //   }
   //   next();
   // });
-  app.useStaticAssets(join(__dirname, '..', 'public'), {
-    index: false,
-    prefix: '/public',
-  });
-  app.useStaticAssets(join(__dirname, '..', 'public/storage'), {
-    index: false,
-    prefix: '/storage',
-  });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

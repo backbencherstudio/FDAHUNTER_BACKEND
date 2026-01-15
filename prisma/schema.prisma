@@ -11,6 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -69,7 +70,9 @@ model User {
   // billing id. e.g. stripe customer id
   billing_id String?
 
-  type              String?   @default("user")
+  type     String? @default("user")
+  category String?
+
   email_verified_at DateTime?
 
   is_two_factor_enabled Int?    @default(0)
@@ -91,6 +94,13 @@ model User {
   payment_transactions PaymentTransaction[]
 
   @@map("users")
+}
+
+enum UserCategory {
+  Casino
+  Sports
+  Stocks
+  Crypto
 }
 
 model Ucode {
@@ -328,22 +338,6 @@ model Conversation {
   @@map("conversations")
 }
 
-// ---------End Chat schema---------
-
-model Faq {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  status     Int?    @default(1) @db.SmallInt
-  sort_order Int?    @default(0)
-  question   String?
-  answer     String?
-
-  @@map("faqs")
-}
-
 model Contact {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -453,8 +447,8 @@ model Category {
   name        String?
   parent_name String?
   parent_id   String?
-  win_rate    Float? @default(0)
-  description String? @default("")
+  win_rate    Float?       @default(0)
+  description String?      @default("")
   predictions Prediction[] @relation("PredictionCategory")
 
   @@map("categories")

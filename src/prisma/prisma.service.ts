@@ -4,9 +4,11 @@ import {
   OnModuleInit,
   OnModuleDestroy,
 } from '@nestjs/common';
+import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import appConfig from '../config/app.config';
 import { PrismaClient } from 'prisma/generated/client';
+// import { PrismaClient } from '../../prisma/generated/client';
 
 @Injectable()
 export class PrismaService
@@ -22,7 +24,8 @@ export class PrismaService
       throw new Error('DATABASE_URL is not defined in environment variables');
     }
 
-    const adapter = new PrismaPg({ connectionString });
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
     super({ adapter });
 
     if (process.env.PRISMA_ENV == '1') {

@@ -67,6 +67,9 @@ export class UserRepository {
    * @returns
    */
   async exist({ field, value }) {
+    if (!field || value === undefined || value === null) {
+        return null;
+    }
     const model = await this.prisma.user.findFirst({
       where: {
         [field]: value,
